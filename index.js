@@ -10,12 +10,55 @@ const port = process.env.PORT || 3030;
 app.use(cors());
 app.use(express.json());
 
-const uri = "mongodb+srv://adminHasan:<password>@hasan-manufacturer-indu.nazsf.mongodb.net/?retryWrites=true&w=majority";
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: "Unauthorised Access" });
+    }
+    const bearer = authHeader.split(" ")[1];
+    jwt.verify(bearer, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: "Forbidden Access" });
+        }
+        req.decoded = decoded;
+        next();
+    });
+}
+
+const uri = `mongodb+srv://${process.env.database_username}:${process.env.database_password}@hasan-manufacturer-indu.nazsf.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-app.get("/", (req, res) => {
-    res.send("Server Listening.....");
-});
+async function run() {
+    try {
+        await client.connect();
+        const products = client.db("manufacturer").collection("products");
+
+        app.get("/", (req, res) => {
+            res.send("Server Listening.....");
+        });
+        app.post("/add-product", async (req, res) => {
+            const query = { name: req.body.name };
+            const update = { $set: req.body };
+            const options = { upsert: true };
+            await products.updateOne(query, update, options);
+            res.send({ success: true });
+        });
+        app.get("/get-products", async (req, res) => {
+            const query = {};
+            const cursor = await products.find(query);
+            const productsResult = await cursor.toArray();
+            res.send(productsResult.reverse());
+        });
+        app.get("/product/:id", async (req, res) => {
+            console.log(req.params.id);
+            const query = { _id: ObjectId(req.params.id) };
+            const result = await products.findOne(query);
+            res.send(result);
+        });
+    } finally {
+    }
+}
+run().catch(console.dir);
 
 app.listen(port, () => {
     console.log("Server Listening.....");
