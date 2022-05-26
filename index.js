@@ -32,6 +32,7 @@ async function run() {
     try {
         await client.connect();
         const products = client.db("manufacturer").collection("products");
+        const orders = client.db("manufacturer").collection("orders");
 
         app.get("/", (req, res) => {
             res.send("Server Listening.....");
@@ -50,10 +51,16 @@ async function run() {
             res.send(productsResult.reverse());
         });
         app.get("/product/:id", async (req, res) => {
-            console.log(req.params.id);
             const query = { _id: ObjectId(req.params.id) };
             const result = await products.findOne(query);
             res.send(result);
+        });
+        app.post("/placeorder", async (req, res) => {
+            const query = { name: req.body.name };
+            const update = { $set: req.body };
+            const options = { upsert: true };
+            await orders.updateOne(query, update, options);
+            res.send({ success: true });
         });
     } finally {
     }
