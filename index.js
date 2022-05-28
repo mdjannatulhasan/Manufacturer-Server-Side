@@ -33,6 +33,7 @@ async function run() {
         await client.connect();
         const products = client.db("manufacturer").collection("products");
         const orders = client.db("manufacturer").collection("orders");
+        const users = client.db("manufacturer").collection("users");
 
         app.get("/", (req, res) => {
             res.send("Server Listening.....");
@@ -60,6 +61,13 @@ async function run() {
             const update = { $set: req.body };
             const options = { upsert: true };
             await orders.updateOne(query, update, options);
+            res.send({ success: true });
+        });
+        app.post("/update-user", async (req, res) => {
+            const query = { name: req.body.email };
+            const update = { $set: req.body };
+            const options = { upsert: true };
+            await users.updateOne(query, update, options);
             res.send({ success: true });
         });
     } finally {
