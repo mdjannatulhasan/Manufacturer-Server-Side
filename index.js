@@ -52,6 +52,12 @@ async function run() {
             const productsResult = await cursor.toArray();
             res.send(productsResult.reverse());
         });
+        app.get("/reviews", async (req, res) => {
+            const query = {};
+            const cursor = reviews.find(query);
+            const reviewsArrsy = await cursor.toArray();
+            res.send(reviewsArrsy.reverse());
+        });
         app.get("/product/:id", async (req, res) => {
             const query = { _id: ObjectId(req.params.id) };
             const result = await products.findOne(query);
