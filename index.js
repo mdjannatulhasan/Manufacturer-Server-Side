@@ -16,7 +16,7 @@ function verifyJWT(req, res, next) {
         return res.status(401).send({ message: "Unauthorised Access" });
     }
     const bearer = authHeader.split(" ")[1];
-    jwt.verify(bearer, process.env.ACCESS_TOKEN, (err, decoded) => {
+    jwt.verify(bearer, process.env.access_webtoken, (err, decoded) => {
         if (err) {
             return res.status(403).send({ message: "Forbidden Access" });
         }
@@ -72,37 +72,48 @@ async function run() {
             await reviews.insertOne(req.body);
             res.send({ success: true });
         });
-        app.post("/update-user", async (req, res) => {
-            const query = { name: req.body.email };
-            if (req.body._id) {
-                req.body._id = ObjectId(req.body._id);
+        app.post("/update-user", verifyJWT, async (req, res) => {
+            const decodedEmail = req?.decoded?.email;
+            const email = req.query.email;
+            if (email === decodedEmail) {
+                const query = { name: req.body.email };
+                if (req.body._id) {
+                    req.body._id = ObjectId(req.body._id);
+                }
+                const update = { $set: req.body };
+                const options = { upsert: true };
+                const result = await users.updateOne(query, update, options);
+                res.send(result);
+            } else {
+                res.status(403).send({ message: "Forbidden Access" });
             }
-            const update = { $set: req.body };
-            const options = { upsert: true };
-            const result = await users.updateOne(query, update, options);
-            res.send(result);
         });
-        app.get("/user", async (req, res) => {
+        app.get("/user", verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
             const result = await users.findOne(query);
             res.send(result);
         });
-        app.get("/myorders", async (req, res) => {
+        app.get("/myorders", verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { email: email };
             const cursor = await orders.find(query);
             const result = await cursor.toArray();
             res.send(result);
         });
-        app.get("/myreviews", async (req, res) => {
+        app.get("/myreviews", verifyJWT, async (req, res) => {
+            const decodedEmail = req?.decoded?.email;
             const email = req.query.email;
-            const query = { email: email };
-            const cursor = await reviews.find(query);
-            const result = await cursor.toArray();
-            res.send(result);
+            if (email === decodedEmail) {
+                const query = { email: email };
+                const cursor = await reviews.find(query);
+                const result = await cursor.toArray();
+                res.send(result);
+            } else {
+                res.status(403).send({ message: "Forbidden Access" });
+            }
         });
-        app.delete("/delete/:id", async (req, res) => {
+        app.delete("/delete/:id", verifyJWT, async (req, res) => {
             const products = client.db("manufacturer").collection("orders");
             const query = { _id: ObjectId(req.params.id) };
             const result = await products.deleteOne(query);
