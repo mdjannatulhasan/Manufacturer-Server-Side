@@ -1,6 +1,6 @@
 # Hasan Manufacturing Industry
 
-live link -> <a href='https://hasan-manufacturing-industry.web.app/'>Live Link</a>
+live link -> <a href='https://hasan-manufacturing-industry.web.app/'>https://hasan-manufacturing-industry.web.app/</a>
 
 ## Description
 
