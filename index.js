@@ -34,6 +34,7 @@ async function run() {
         const products = client.db("manufacturer").collection("products");
         const orders = client.db("manufacturer").collection("orders");
         const users = client.db("manufacturer").collection("users");
+        const userCollection = client.db("manufacturer").collection("userCollection");
         const reviews = client.db("manufacturer").collection("reviews");
 
         app.get("/", (req, res) => {
@@ -107,9 +108,22 @@ async function run() {
             const result = await products.deleteOne(query);
             res.send(result);
         });
+        app.put("/user/:email", async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: user,
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            const token = jwt.sign({ email: email }, process.env.access_webtoken, { expiresIn: "76h" });
+            res.send({ result, token });
+        });
     } finally {
     }
 }
+
 run().catch(console.dir);
 
 app.listen(port, () => {
