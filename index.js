@@ -6,7 +6,7 @@ const cors = require("cors");
 const res = require("express/lib/response");
 const app = express();
 const port = process.env.PORT || 3030;
-
+const stripe = require("stripe")(process.env.stripe_secret);
 app.use(cors());
 app.use(express.json());
 
@@ -107,6 +107,12 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         });
+        app.get("/myorders/:id", verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orders.findOne(query);
+            res.send(result);
+        });
         app.get("/myreviews", verifyJWT, async (req, res) => {
             const decodedEmail = req?.decoded?.email;
             const email = req.query.email;
@@ -157,8 +163,19 @@ async function run() {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email });
             const isAdmin = user.role === "admin";
-            console.log(isAdmin);
             res.send({ admin: isAdmin });
+        });
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+            const order = req.body;
+            console.log(order);
+            const price = order.price;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"],
+            });
+            res.send({ client_secret: paymentIntent.payment_secret });
         });
     } finally {
     }
