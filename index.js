@@ -57,10 +57,7 @@ async function run() {
             res.send(result);
         });
         app.post("/placeorder", async (req, res) => {
-            const query = { name: req.body.name };
-            const update = { $set: req.body };
-            const options = { upsert: true };
-            await orders.updateOne(query, update, options);
+            await orders.insertOne(req.body);
             res.send({ success: true });
         });
         app.post("/update-user", async (req, res) => {
@@ -77,6 +74,19 @@ async function run() {
             const email = req.query.email;
             const query = { email: email };
             const result = await users.findOne(query);
+            res.send(result);
+        });
+        app.get("/myorders", async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = await orders.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+        app.delete("/delete/:id", async (req, res) => {
+            const products = client.db("manufacturer").collection("orders");
+            const query = { _id: ObjectId(req.params.id) };
+            const result = await products.deleteOne(query);
             res.send(result);
         });
     } finally {
