@@ -59,6 +59,12 @@ async function run() {
             const reviewsArrsy = await cursor.toArray();
             res.send(reviewsArrsy.reverse());
         });
+        app.get("/users", verifyJWT, async (req, res) => {
+            const query = {};
+            const cursor = userCollection.find(query);
+            const usersArray = await cursor.toArray();
+            res.send(usersArray.reverse());
+        });
         app.get("/product/:id", async (req, res) => {
             const query = { _id: ObjectId(req.params.id) };
             const result = await products.findOne(query);
@@ -130,6 +136,29 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, options);
             const token = jwt.sign({ email: email }, process.env.access_webtoken, { expiresIn: "76h" });
             res.send({ result, token });
+        });
+        app.put("/makeadmin/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const requester = req?.decoded?.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === "admin") {
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: { role: "admin" },
+                };
+                const result = await userCollection.updateOne(filter, updateDoc);
+                res.send(result);
+            } else {
+                res.status(403).send({ message: "Forbidden Access" });
+            }
+        });
+        app.get("/admin/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === "admin";
+            console.log(isAdmin);
+            res.send({ admin: isAdmin });
         });
     } finally {
     }
