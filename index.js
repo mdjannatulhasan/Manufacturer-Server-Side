@@ -65,10 +65,13 @@ async function run() {
         });
         app.post("/update-user", async (req, res) => {
             const query = { name: req.body.email };
+            if (req.body._id) {
+                req.body._id = ObjectId(req.body._id);
+            }
             const update = { $set: req.body };
             const options = { upsert: true };
-            await users.updateOne(query, update, options);
-            res.send({ success: true });
+            const result = await users.updateOne(query, update, options);
+            res.send(result);
         });
         app.get("/user", async (req, res) => {
             const email = req.query.email;
