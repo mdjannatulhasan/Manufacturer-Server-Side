@@ -34,6 +34,7 @@ async function run() {
         const products = client.db("manufacturer").collection("products");
         const orders = client.db("manufacturer").collection("orders");
         const users = client.db("manufacturer").collection("users");
+        const reviews = client.db("manufacturer").collection("reviews");
 
         app.get("/", (req, res) => {
             res.send("Server Listening.....");
@@ -60,6 +61,10 @@ async function run() {
             await orders.insertOne(req.body);
             res.send({ success: true });
         });
+        app.post("/addreview", async (req, res) => {
+            await reviews.insertOne(req.body);
+            res.send({ success: true });
+        });
         app.post("/update-user", async (req, res) => {
             const query = { name: req.body.email };
             if (req.body._id) {
@@ -80,6 +85,13 @@ async function run() {
             const email = req.query.email;
             const query = { email: email };
             const cursor = await orders.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+        app.get("/myreviews", async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = await reviews.find(query);
             const result = await cursor.toArray();
             res.send(result);
         });
