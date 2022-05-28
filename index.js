@@ -70,6 +70,12 @@ async function run() {
             await users.updateOne(query, update, options);
             res.send({ success: true });
         });
+        app.get("/user", async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const result = await users.findOne(query);
+            res.send(result);
+        });
     } finally {
     }
 }
